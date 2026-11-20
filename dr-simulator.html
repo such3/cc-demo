@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Multi-Region Disaster Recovery Simulator</title>
+<style>
+:root{color-scheme:light;--bg:#EEF2F7;--ink:#101828;--mut:#5B6677;--line:#D5DBE4;--east:#1E4FD8;--et:#E8EEFD;--west:#D9650F;--wt:#FDF0E3;--ok:#0E8F72;--okt:#E2F5EF;--bad:#D32F4A;--badt:#FDECEF;--warn:#B7791F;--wnt:#FFF6E0;--vio:#7C3AED;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*:before,*:after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1040px;margin:0 auto;padding:18px 14px 40px}
+header{display:flex;gap:14px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+h1{font-size:24px;margin:0 0 4px;letter-spacing:-.3px}h2{font-size:16px;margin:0 0 8px}
+.sub{margin:0;color:var(--mut);max-width:640px}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:14px;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+.btn{font:inherit;font-weight:600;border:1px solid var(--line);background:#fff;color:var(--ink);padding:8px 13px;border-radius:10px;cursor:pointer;transition:transform .12s,box-shadow .12s,background .12s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 3px 8px rgba(16,24,40,.1)}.btn:active{transform:none}
+.pri{background:var(--east);border-color:var(--east);color:#fff}.dang{color:var(--bad);border-color:#F3B8C3;background:var(--badt)}.good{color:var(--ok);border-color:#A9DFD0;background:var(--okt)}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.narr{margin-top:14px;background:var(--et);border:1px solid #C8D6FA;color:#16358F;border-radius:12px;padding:10px 14px;font-weight:500;transition:background .3s}
+.banner{border-radius:14px;margin-top:14px;padding:14px;border:1px solid var(--line);background:#fff;transition:background .4s,border-color .4s}
+.banner.ok{background:var(--okt);border-color:#A9DFD0}.banner.bad{background:var(--badt);border-color:#F3B8C3;animation:shake .5s}.banner.warn{background:var(--wnt);border-color:#F0D898}
+@keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.bt{display:flex;gap:10px;align-items:center;font-size:18px}.banner p{margin:4px 0 0;color:#344054}
+.pill{display:inline-block;width:12px;height:12px;border-radius:50%;background:var(--ok);animation:pulse 1.4s infinite}
+.bad .pill{background:var(--bad)}.warn .pill{background:var(--warn)}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(14,143,114,.5)}100%{box-shadow:0 0 0 10px rgba(14,143,114,0)}}
+.steps{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.st{flex:1;min-width:90px;text-align:center;font-size:12px;font-weight:700;padding:6px 4px;border-radius:8px;background:rgba(16,24,40,.06);color:var(--mut);transition:all .3s}
+.st.done{background:#fff;color:var(--ok)}.st.on{background:var(--ink);color:#fff;transform:scale(1.04)}
+.scroll{overflow-x:auto}svg{display:block;width:100%;min-width:680px;height:auto}
+svg text{font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+.flow{stroke-dasharray:7 7;animation:dash .8s linear infinite}@keyframes dash{to{stroke-dashoffset:-14}}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--mut);margin-top:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.m{border:1px solid var(--line);border-radius:12px;padding:10px;background:#FAFBFD}
+.m b{display:block;font-size:24px;line-height:1.2;transition:color .3s}.m span{font-size:12px;color:var(--mut);display:block}.m em{font-style:normal;font-size:11px;color:var(--mut)}
+.bars{display:flex;align-items:flex-end;gap:2px;height:54px;margin-top:8px}
+.bars div{flex:1;border-radius:2px 2px 0 0;animation:grow .3s}@keyframes grow{from{transform:scaleY(0);transform-origin:bottom}}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:760px){.two{grid-template-columns:1fr}}
+.strats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.sc{text-align:left;font:inherit;border:2px solid var(--line);background:#fff;border-radius:12px;padding:10px;cursor:pointer;transition:all .2s}
+.sc:hover{border-color:#9DB5F5}.sc.sel{border-color:var(--east);background:var(--et)}
+.sc b{display:block}.sc small{display:block;color:var(--mut);margin:2px 0 6px}.sc u{text-decoration:none;font-size:12px;font-weight:600;color:#344054}
+.ctl{margin-bottom:10px}.ctl label{display:flex;justify-content:space-between;font-size:13px;font-weight:600}.ctl output{color:var(--east)}
+input[type=range]{width:100%;accent-color:var(--east)}
+#log{max-height:260px;overflow:auto;font-size:13px}
+#log div{display:flex;gap:8px;padding:5px 0;border-bottom:1px solid #EEF1F5;animation:in .4s}@keyframes in{from{opacity:0;transform:translateX(-8px)}}
+#log time{color:var(--mut);min-width:52px;font-variant-numeric:tabular-nums}
+.d{width:9px;height:9px;border-radius:50%;margin-top:6px;flex:none}
+.know{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;font-size:13px}.know div{background:#FAFBFD;border:1px solid var(--line);border-radius:12px;padding:10px}.know b{display:block;margin-bottom:2px}
+.fine{font-size:12px;color:var(--mut)}
+</style></head><body><div class="wrap">
+<header><div><h1>Multi-Region Disaster Recovery Simulator</h1>
+<p class="sub">Active-passive failover between two cloud regions, simulated live in your browser. Crash the primary region and watch health checks, failover, data loss and failback happen.</p></div>
+<button class="btn pri" id="b-demo">▶ Play full demo</button></header>
+<div class="narr" id="narr">Press <b>Play full demo</b> for a guided run, or trigger a disaster yourself.</div>
+
+<section class="banner ok" id="banner"><div class="steps" id="steps"></div>
+<div class="bt"><span class="pill"></span><b id="ph-t"></b></div><p id="ph-d"></p></section>
+
+<section class="card"><div class="scroll"><svg id="svg" viewBox="0 0 900 460"><g id="dyn"></g><g id="pk"></g></svg></div>
+<div class="legend"><span><i style="background:#2563EB"></i>user order</span><span><i style="background:var(--ok)"></i>health check passed</span><span><i style="background:var(--bad)"></i>health check failed</span><span><i style="background:var(--vio)"></i>replication copy</span><span><i style="background:#BFEBDD;border:1px solid var(--ok)"></i>order safe in both regions</span><span><i style="background:#FFE9A8;border:1px solid var(--warn)"></i>order only in one region (at risk)</span></div>
+<div class="btns"><button class="btn dang" id="b-crash">Trigger disaster</button><button class="btn good" id="b-rest">Restore primary</button><button class="btn" id="b-slow">Slow responses</button><button class="btn" id="b-flaky">Intermittent errors</button><button class="btn pri" id="b-fb" hidden>Fail back now</button><button class="btn" id="b-reset">Reset</button></div></section>
+
+<div class="two">
+<section class="card"><h2>Recovery scorecard</h2><div class="grid" id="score"></div></section>
+<section class="card"><h2>Live traffic (last 70 orders)</h2><div class="bars" id="bars"></div><p class="fine" style="margin:8px 0 0">Green = order accepted, red = order failed. Failures before detection finishes are the honest cost of health-check based failover.</p><div class="grid" style="margin-top:10px" id="avail"></div></section>
+</div>
+
+<section class="card"><h2>Choose a DR strategy</h2><p class="fine" style="margin:0 0 10px">The four standard cloud strategies, with real-world times scaled down to seconds. Pick one, then trigger a disaster.</p><div class="strats" id="strats"></div></section>
+
+<div class="two">
+<section class="card"><h2>Tune the failover</h2>
+<div class="ctl"><label>Health check every <output id="o-int"></output></label><input type="range" id="s-int" min="300" max="3000" step="100"></div>
+<div class="ctl"><label>Failed checks to fail over <output id="o-thr"></output></label><input type="range" id="s-thr" min="1" max="6" step="1"></div>
+<div class="ctl"><label>Replication lag <output id="o-lag"></output></label><input type="range" id="s-lag" min="0" max="6000" step="100"></div>
+<div class="ctl"><label>Standby warm-up time <output id="o-warm"></output></label><input type="range" id="s-warm" min="0" max="10000" step="500"></div>
+<label style="font-size:13px;font-weight:600"><input type="checkbox" id="s-auto"> Automatic failback</label>
+<p class="fine" id="expect" style="margin-bottom:0"></p></section>
+<section class="card"><h2>Event timeline</h2><div id="log"></div></section>
+</div>
+
+<section class="card"><h2>What you are seeing</h2><div class="know">
+<div><b>Health checks &amp; hysteresis</b>The manager probes both regions. It needs several failures in a row to fail over, and several passes to trust a region again, so one blip does not cause a flip. Try “Intermittent errors”.</div>
+<div><b>RTO (recovery time)</b>How long users are without service. Roughly: failed checks × interval + warm-up time. Faster checks lower it but raise false alarms.</div>
+<div><b>RPO (data loss)</b>Replication is asynchronous. Orders still waiting to be copied when the primary dies are lost for good. More lag means more loss.</div>
+<div><b>Resync before failback</b>A restarted region has empty memory. It pulls a snapshot from the standby and only takes traffic after it is synced and healthy.</div></div>
+<p class="fine" style="margin-bottom:0">Simplified: real DNS failover also waits for resolver caches (TTL) to expire; here routing flips instantly once the manager decides. The “database” is in memory, so a crash genuinely loses unreplicated orders.</p></section>
+</div>
+<script>
+const $=s=>document.querySelector(s),NAMES={primary:"us-east-1",secondary:"us-west-2"};
+const U=[150,230],Tin=[300,230],Tout=[470,230],P=[640,115],X=[640,345],R1=[740,210],R2=[740,250];
+const ITEMS=["Espresso beans","Standing desk","Keyboard","USB-C dock","Headphones","Webcam"];
+const PRE={backup:{n:"Backup and restore",how:"Scheduled backups; standby rebuilt after a disaster.",rto:"Hours",rpo:"Hours",cost:"$",c:{interval:2000,thr:3,lag:6000,warm:9000,auto:false}},
+pilot:{n:"Pilot light",how:"Data replicated, minimal core running, rest started on demand.",rto:"Tens of minutes",rpo:"Minutes",cost:"$$",c:{interval:2000,thr:3,lag:3500,warm:5000,auto:false}},
+warm:{n:"Warm standby",how:"Scaled-down working copy, scaled up on failover.",rto:"Minutes",rpo:"Seconds",cost:"$$$",c:{interval:1000,thr:3,lag:1500,warm:1500,auto:true}},
+active:{n:"Active-active",how:"Very fast detection, near-zero lag; both regions always ready.",rto:"Near zero",rpo:"Near zero",cost:"$$$$",c:{interval:500,thr:2,lag:300,warm:0,auto:true}}};
+let S,pk=[],fx=[],lv=-1,hvs=-1;
+const now=()=>performance.now(),mk=()=>({up:true,ready:true,fault:"none",orders:new Map(),queue:[]});
+function init(cfg,strat){S={cfg:{...cfg,rec:3,strat},active:"primary",r:{primary:mk(),secondary:mk()},h:{primary:{f:0,o:0,ok:true},secondary:{f:0,o:0,ok:true}},m:{tot:0,ok:0,fail:0,fo:0},inc:null,last:null,nid:1,hist:[],hv:0,log:[],lg:0,warmAt:null,nr:0,np:0,nrp:0,t0:now()};pk=[];fx=[];log("info","Traffic manager started. Both regions healthy, "+NAMES.primary+" is active.")}
+function log(l,m){S.log.unshift({l,m,t:(now()-S.t0)/1000});if(S.log.length>60)S.log.pop();S.lg++}
+const hist=v=>{S.hist.push(v);if(S.hist.length>70)S.hist.shift();S.hv++};
+const okNow=r=>r.up&&r.ready&&(r.fault==="none"||(r.fault==="flaky"&&Math.random()>.5));
+function sendReq(){const to=S.active,id=S.nid++;pk.push({pts:[U,Tin,Tout,to==="primary"?P:X],t0:now(),dur:900,r:5,col:"#2563EB",end:()=>arrive(to,id)});S.m.tot++}
+function arrive(to,id){const r=S.r[to],e=to==="primary"?P:X,t=now();
+if(okNow(r)){r.orders.set(id,{id});r.queue.push({id,due:t+S.cfg.lag});S.m.ok++;hist(1);fx.push({x:e[0]+10,y:e[1],txt:"+#"+id,col:"#0E8F72",t0:t});
+if(S.inc&&S.inc.rto==null&&to==="secondary"){S.inc.rto=(t-S.inc.at)/1000;log("ok","First order served by "+NAMES[to]+". Recovery time (RTO): "+S.inc.rto.toFixed(1)+" s")}}
+else{S.m.fail++;if(S.inc)S.inc.failed++;hist(0);fx.push({x:e[0]+10,y:e[1],txt:"✕ 503",col:"#D32F4A",t0:t})}}
+function probes(){const t=now();["primary","secondary"].forEach(id=>{const r=S.r[id],h=S.h[id],ok=okNow(r);
+pk.push({pts:[Tout,id==="primary"?P:X],t0:t,dur:450,r:3.5,col:ok?"#0E8F72":"#D32F4A"});
+if(ok){h.o++;h.f=0;if(!h.ok&&h.o>=S.cfg.rec){h.ok=true;log("ok",NAMES[id]+" passed "+h.o+" health checks in a row. Marked healthy.")}}
+else{h.f++;h.o=0;if(r.up&&!r.ready&&h.f===1)log("info",NAMES[id]+" is up but still syncing data. Not ready for traffic.");
+if(h.ok&&h.f>=S.cfg.thr){h.ok=false;if(S.inc&&S.inc.det==null)S.inc.det=(t-S.inc.at)/1000;log("bad",NAMES[id]+" failed "+h.f+" health checks in a row. Marked unhealthy"+(S.inc&&S.inc.det!=null?" (detected after "+S.inc.det.toFixed(1)+" s).":"."))}}});routing()}
+function routing(){const p=S.h.primary,s=S.h.secondary;
+if(S.active==="primary"&&!p.ok&&S.warmAt==null){if(s.ok){if(S.cfg.warm>0){S.warmAt=now()+S.cfg.warm;log("warn","Standby needs "+(S.cfg.warm/1000).toFixed(1)+" s to warm up before it can take traffic.")}else failover()}}
+if(S.active==="secondary"&&p.ok&&S.cfg.auto)failback()}
+function failover(){S.warmAt=null;S.active="secondary";S.m.fo++;log("warn","Routing switched to "+NAMES.secondary+". Users now hit the backup region.")}
+function failback(){if(S.active!=="secondary")return;S.active="primary";log("ok","Failback complete. Traffic is back on "+NAMES.primary+".");if(S.inc){S.last=S.inc;S.inc=null}}
+function repl(){const t=now();["primary","secondary"].forEach(id=>{const r=S.r[id],pe=S.r[id==="primary"?"secondary":"primary"];if(!r.up||!pe.up||!r.queue.length)return;
+const due=r.queue.filter(q=>q.due<=t);if(!due.length)return;due.forEach(q=>{const o=r.orders.get(q.id);if(o)pe.orders.set(q.id,o)});r.queue=r.queue.filter(q=>q.due>t);
+pk.push({pts:id==="primary"?[R1,R2]:[R2,R1],t0:t,dur:450,r:4.5,col:"#7C3AED"})})}
+function openInc(lost){if(!S.inc)S.inc={at:now(),lost,failed:0,det:null,rto:null}}
+function crash(){const r=S.r.primary;if(!r.up)return;const lost=r.queue.length;r.orders.clear();r.queue=[];r.up=false;r.fault="none";S.inc=null;openInc(lost);
+log("bad","Disaster: "+NAMES.primary+" lost power. "+lost+" order(s) had not been replicated yet and are gone for good.")}
+function restore(){const r=S.r.primary;if(!r.up){r.up=true;r.ready=false;log("info",NAMES.primary+" restarted with empty memory. Pulling a snapshot from "+NAMES.secondary+".");
+setTimeout(()=>{if(S.r.primary!==r)return;S.r.secondary.orders.forEach((o,k)=>r.orders.set(k,o));r.ready=true;log("ok",NAMES.primary+" resynced "+r.orders.size+" orders. Ready once health checks pass.")},2000)}
+else if(r.fault!=="none"){r.fault="none";log("info","Fault cleared on "+NAMES.primary+".")}}
+function fault(k){const r=S.r.primary;if(!r.up||r.fault===k)return;r.fault=k;openInc(0);log("warn",NAMES.primary+(k==="slow"?" is now very slow (responses exceed the 800 ms probe timeout).":" is now returning random errors (about half of requests)."))}
+function tick(){const n=now();if(n>=S.nr){S.nr=n+420;sendReq()}if(n>=S.np){S.np=n+S.cfg.interval;probes()}if(n>=S.nrp){S.nrp=n+250;repl()}if(S.warmAt&&n>=S.warmAt)failover();render()}
+/* ---- drawing ---- */
+function reg(id,x,y,col,tint){const r=S.r[id],act=S.active===id,pe=S.r[id==="primary"?"secondary":"primary"];let st="HEALTHY",sc="#0E8F72",fill="#fff";
+if(!r.up){st="OFFLINE";sc="#D32F4A";fill="#FDECEF"}else if(!r.ready){st="RESYNCING";sc="#B7791F";fill="#FFF6E0"}else if(r.fault==="slow"){st="SLOW";sc="#B7791F";fill="#FFF6E0"}else if(r.fault==="flaky"){st="ERRORS";sc="#B7791F";fill="#FFF6E0"}
+const ords=[...r.orders.keys()].slice(-6);let o=`<rect x="${x}" y="${y}" width="240" height="190" rx="14" fill="${fill}" stroke="${act?col:"#D5DBE4"}" stroke-width="${act?3.5:1.5}"/><rect x="${x}" y="${y}" width="240" height="42" rx="14" fill="${tint}"/><rect x="${x}" y="${y+28}" width="240" height="14" fill="${tint}"/>
+<text x="${x+14}" y="${y+26}" font-size="17" font-weight="700" fill="${col}">${NAMES[id]}</text><text x="${x+226}" y="${y+26}" text-anchor="end" font-size="11" font-weight="700" fill="${act?col:"#5B6677"}">${act?"ACTIVE":"STANDBY"}</text>
+<rect x="${x+14}" y="${y+52}" width="${st.length*8+18}" height="22" rx="11" fill="${sc}" opacity=".15"/><circle cx="${x+25}" cy="${y+63}" r="4" fill="${sc}"><animate attributeName="opacity" values="1;.3;1" dur="1.4s" repeatCount="indefinite"/></circle><text x="${x+36}" y="${y+67}" font-size="11" font-weight="700" fill="${sc}">${st}</text>`;
+if(!r.up)o+=`<text x="${x+120}" y="${y+125}" text-anchor="middle" font-size="14" font-weight="700" fill="#D32F4A">Power lost. Memory wiped.</text><text x="${x+120}" y="${y+146}" text-anchor="middle" font-size="12" fill="#5B6677">No orders can be served here</text>`;
+else{o+=`<text x="${x+14}" y="${y+100}" font-size="12" fill="#5B6677">Orders stored</text><text x="${x+14}" y="${y+124}" font-size="24" font-weight="700" fill="#101828">${r.orders.size}</text>
+<text x="${x+140}" y="${y+100}" font-size="12" fill="#5B6677">Waiting to replicate</text><text x="${x+140}" y="${y+124}" font-size="24" font-weight="700" fill="${r.queue.length?"#B7791F":"#101828"}">${r.queue.length}</text>`;
+ords.forEach((i,k)=>{const safe=pe.orders.has(i);o+=`<rect x="${x+14+k*36}" y="${y+148}" width="33" height="24" rx="6" fill="${safe?"#BFEBDD":"#FFE9A8"}" stroke="${safe?"#0E8F72":"#B7791F"}"/><text x="${x+30.5+k*36}" y="${y+164}" text-anchor="middle" font-size="10" font-weight="600" fill="#101828">#${i}</text>`})}
+return o}
+function dyn(){const a=S.active,ln=(p,col,on)=>`<polyline points="${p.join(" ")}" fill="none" stroke="${col}" stroke-width="${on?3.5:2}" stroke-linecap="round" ${on?'class="flow"':'stroke-dasharray="3 8"'}/>`;
+const bothUp=S.r.primary.up&&S.r.secondary.up;
+let s=ln(["150,230","300,230"],"#2563EB",1)+ln(["470,230","640,115"],a==="primary"?"#1E4FD8":"#CBD2DC",a==="primary")+ln(["470,230","640,345"],a==="secondary"?"#D9650F":"#CBD2DC",a==="secondary");
+s+=`<line x1="740" y1="210" x2="740" y2="250" stroke="${bothUp?"#7C3AED":"#CBD2DC"}" stroke-width="3" ${bothUp?'class="flow"':'stroke-dasharray="3 5"'}/><text x="756" y="234" font-size="11" font-weight="600" fill="${bothUp?"#7C3AED":"#98A2B3"}">${bothUp?"async replication":"replication broken"}</text>`;
+s+=`<rect x="20" y="185" width="130" height="90" rx="14" fill="#fff" stroke="#D5DBE4" stroke-width="1.5"/><text x="85" y="216" text-anchor="middle" font-size="16" font-weight="700">Users</text><text x="85" y="234" text-anchor="middle" font-size="11" fill="#5B6677">browsers and apps</text><text x="85" y="258" text-anchor="middle" font-size="12" font-weight="600" fill="#2563EB">${S.m.tot} orders sent</text>`;
+const th=S.cfg.thr;s+=`<rect x="300" y="165" width="170" height="130" rx="14" fill="#fff" stroke="#101828" stroke-width="2"/><text x="385" y="189" text-anchor="middle" font-size="14" font-weight="700">Traffic manager</text><text x="385" y="204" text-anchor="middle" font-size="10" fill="#5B6677">Route 53 stand-in</text>`;
+["primary","secondary"].forEach((id,i)=>{const h=S.h[id],y=226+i*22;s+=`<circle cx="318" cy="${y-4}" r="5" fill="${h.ok?"#0E8F72":"#D32F4A"}"/><text x="330" y="${y}" font-size="12" font-weight="600">${NAMES[id]}</text><text x="458" y="${y}" text-anchor="end" font-size="11" fill="${h.f?"#D32F4A":"#5B6677"}">${h.ok?(h.f?"fail "+h.f+"/"+th:"healthy"):"unhealthy"}</text>`});
+s+=`<text x="385" y="283" text-anchor="middle" font-size="12" font-weight="700" fill="${a==="primary"?"#1E4FD8":"#D9650F"}">Routing → ${NAMES[a]}${S.warmAt?" (warming)":""}</text>`;
+return s+reg("primary",640,20,"#1E4FD8","#E8EEFD")+reg("secondary",640,250,"#D9650F","#FDF0E3")}
+function pos(p,t){const L=[];let tot=0;for(let i=1;i<p.length;i++){const d=Math.hypot(p[i][0]-p[i-1][0],p[i][1]-p[i-1][1]);L.push(d);tot+=d}let d=t*tot;for(let i=0;i<L.length;i++){if(d<=L[i]||i===L.length-1){const k=Math.min(1,d/L[i]);return[p[i][0]+(p[i+1][0]-p[i][0])*k,p[i][1]+(p[i+1][1]-p[i][1])*k]}d-=L[i]}}
+function frame(){const t=now();let s="";pk=pk.filter(q=>{const k=(t-q.t0)/q.dur;if(k>=1){q.end&&q.end();return false}const[x,y]=pos(q.pts,k);s+=`<circle cx="${x}" cy="${y}" r="${q.r}" fill="${q.col}" stroke="#fff" stroke-width="1.5"/>`;return true});
+fx=fx.filter(f=>{const k=(t-f.t0)/1100;if(k>=1)return false;s+=`<text x="${f.x}" y="${f.y-k*28}" font-size="14" font-weight="700" fill="${f.col}" opacity="${1-k}">${f.txt}</text><circle cx="${f.x-10}" cy="${f.y}" r="${6+k*22}" fill="none" stroke="${f.col}" stroke-width="2" opacity="${.8-k*.8}"/>`;return true});
+$("#pk").innerHTML=s;requestAnimationFrame(frame)}
+/* ---- DOM ---- */
+const PH=["Healthy","Failure detected","Running on the backup","Primary recovered"];
+function render(){$("#dyn").innerHTML=dyn();const p=S.h.primary,pr=S.r.primary,c=S.cfg;
+const ph=S.active==="primary"?((pr.up&&pr.fault==="none"&&p.ok&&p.f===0)?0:1):(p.ok?3:2);
+const desc=[`Users are served by ${NAMES.primary}. The standby in ${NAMES.secondary} receives no user traffic, only replicated copies of each order.`,
+S.warmAt?`${NAMES.primary} is marked unhealthy. The standby needs ${(c.warm/1000).toFixed(1)} s to warm up, so users still see errors.`:`${p.f} of ${c.thr} health checks have failed. Orders sent to ${NAMES.primary} meanwhile fail, because the manager does not retry.`,
+`Users are on ${NAMES.secondary}. ${pr.up?(pr.ready?"The primary is back and being health-checked.":"The primary is restarting and resyncing its data."):"Restore the primary to begin recovery."}`,
+c.auto?"The primary passed its checks. Automatic failback is moving traffic home.":"The primary is healthy again. Automatic failback is off, so press “Fail back now”."];
+$("#banner").className="banner "+["ok","bad","warn","warn"][ph];$("#ph-t").textContent=PH[ph];$("#ph-d").textContent=desc[ph];
+$("#steps").innerHTML=["Normal","Detect","Failover","Failback"].map((n,i)=>`<div class="st ${i<ph?"done":i===ph?"on":""}">${i<ph?"✓ ":""}${n}</div>`).join("");
+$("#b-fb").hidden=!(S.active==="secondary"&&p.ok&&!c.auto);
+const L=S.inc||S.last,f=(v,u)=>v==null?"–":v.toFixed(1)+u;
+const M=[["Detection time",f(L&&L.det," s"),"crash until marked unhealthy"],["Recovery time (RTO)",f(L&&L.rto," s"),"crash until orders work again"],["Orders lost (RPO)",L?L.lost:"–","unreplicated at crash"],["Failed requests",L?L.failed:"–","before and during failover"]];
+$("#score").innerHTML=M.map(m=>`<div class="m"><span>${m[0]}</span><b>${m[1]}</b><em>${m[2]}</em></div>`).join("");
+const av=S.m.tot-S.m.ok-S.m.fail<0?0:S.m.tot?(S.m.ok/Math.max(1,S.m.ok+S.m.fail)*100):100;
+$("#avail").innerHTML=`<div class="m"><span>Availability</span><b style="color:${av<95?"#D32F4A":"#0E8F72"}">${av.toFixed(1)}%</b></div><div class="m"><span>Failovers</span><b>${S.m.fo}</b></div>`;
+if(hvs!==S.hv){hvs=S.hv;$("#bars").innerHTML=S.hist.map(v=>`<div style="height:${v?100:70}%;background:${v?"#34C79F":"#D32F4A"}"></div>`).join("")}
+if(lv!==S.lg){lv=S.lg;$("#log").innerHTML=S.log.map(e=>`<div><time>+${e.t.toFixed(1)}s</time><span class="d" style="background:${{ok:"#0E8F72",bad:"#D32F4A",warn:"#B7791F",info:"#98A2B3"}[e.l]}"></span><span>${e.m}</span></div>`).join("")}
+$("#expect").textContent=`Expected failover: about ${(c.thr*c.interval/1000+c.warm/1000).toFixed(1)} s after a crash (${c.thr} checks × ${(c.interval/1000).toFixed(1)} s${c.warm?" + "+(c.warm/1000).toFixed(1)+" s warm-up":""}). Orders written in the last ${(c.lag/1000).toFixed(1)} s before a crash can be lost.`;
+document.querySelectorAll(".sc").forEach(b=>b.classList.toggle("sel",c.strat===b.dataset.k))}
+/* ---- controls ---- */
+$("#strats").innerHTML=Object.entries(PRE).map(([k,v])=>`<button class="sc" data-k="${k}"><b>${v.n}</b><small>${v.how}</small><u>RTO ${v.rto} · RPO ${v.rpo} · ${v.cost}</u></button>`).join("");
+const sl=[["int","interval",v=>(v/1000).toFixed(1)+" s"],["thr","thr",v=>v],["lag","lag",v=>(v/1000).toFixed(1)+" s"],["warm","warm",v=>(v/1000).toFixed(1)+" s"]];
+function sync(){sl.forEach(([i,k,fm])=>{$("#s-"+i).value=S.cfg[k];$("#o-"+i).textContent=fm(S.cfg[k])});$("#s-auto").checked=S.cfg.auto}
+sl.forEach(([i,k,fm])=>$("#s-"+i).oninput=e=>{S.cfg[k]=+e.target.value;S.cfg.strat="custom";$("#o-"+i).textContent=fm(+e.target.value)});
+$("#s-auto").onchange=e=>{S.cfg.auto=e.target.checked;S.cfg.strat="custom"};
+$("#strats").onclick=e=>{const b=e.target.closest(".sc");if(!b)return;S.cfg={...S.cfg,...PRE[b.dataset.k].c,strat:b.dataset.k};sync();log("info","Strategy set to "+PRE[b.dataset.k].n+".")};
+$("#b-crash").onclick=crash;$("#b-rest").onclick=restore;$("#b-slow").onclick=()=>fault("slow");$("#b-flaky").onclick=()=>fault("flaky");$("#b-fb").onclick=failback;
+let demoOn=false;const sleep=ms=>new Promise(r=>setTimeout(r,ms)),say=h=>$("#narr").innerHTML=h;
+async function until(f,max){const t=Date.now();while(!f()&&Date.now()-t<(max||45000))await sleep(200)}
+$("#b-reset").onclick=()=>{init(S.cfg,S.cfg.strat);sync();say("Simulation reset.")};
+$("#b-demo").onclick=async()=>{if(demoOn)return;demoOn=true;const id=S;const ok=()=>id===S;
+say("<b>Step 1 of 6.</b> Normal operation. Orders flow to us-east-1 and are copied to us-west-2 a moment later.");await sleep(6500);if(!ok())return demoOn=false;
+say("<b>Step 2 of 6.</b> Disaster! us-east-1 loses power. Watch the red failures while health checks count up.");crash();await until(()=>!ok()||S.active==="secondary");if(!ok())return demoOn=false;
+say("<b>Step 3 of 6.</b> Failover. The manager switched routing to us-west-2. Check the scorecard for RTO and lost orders.");await sleep(7000);if(!ok())return demoOn=false;
+say("<b>Step 4 of 6.</b> Restoring us-east-1. It restarts empty, then resyncs from us-west-2 before it may take traffic.");restore();await until(()=>!ok()||S.h.primary.ok);if(!ok())return demoOn=false;
+say("<b>Step 5 of 6.</b> Primary healthy again. Failing back.");if(!S.cfg.auto){await sleep(2500);failback()}await until(()=>!ok()||S.active==="primary");
+if(ok())say("<b>Step 6 of 6.</b> Done. Try another strategy, or tune the sliders, and run it again to compare RTO and data loss.");demoOn=false};
+init(PRE.warm.c,"warm");sync();setInterval(tick,100);requestAnimationFrame(frame);
+</script></body></html>
